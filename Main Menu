@@ -1,0 +1,155 @@
+package com.example.spacerace;
+
+import android.content.Context;
+import android.content.Intent;
+import android.media.MediaPlayer;
+import android.speech.tts.TextToSpeech;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import java.util.Locale;
+
+public class MainMenu extends AppCompatActivity implements TextToSpeech.OnInitListener{
+
+    MediaPlayer mp;
+
+    Button start_btn_;
+    Button easy_btn_;
+    Button medium_btn_;
+    Button hard_btn_;
+
+    EditText name_et_;
+
+    String difficulty = "0";
+
+    String txt_file_to_use;
+
+    String new_name;
+
+    public TextToSpeech tts;
+    public String text_to_say = "";
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_menu);
+
+        start_btn_=(Button)findViewById(R.id.start_btn);
+        easy_btn_=(Button)findViewById(R.id.easy_btn);
+        medium_btn_=(Button)findViewById(R.id.medium_btn);
+        hard_btn_=(Button)findViewById(R.id.hard_btn);
+
+        start_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {     start();    }});
+        easy_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {        easy();            }});
+        medium_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {        medium();            }});
+        hard_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {        hard();           }});
+
+        name_et_=(EditText)findViewById(R.id.name_et);
+
+        //play music
+        play_sound(R.raw.twilight);
+
+    }
+
+    public void start() {
+        if(difficulty.equals("0")) {
+            toast("Select Difficulty!");
+        }
+
+        if(name_et_.getText().toString().length() == 0) {
+            toast("Enter Name!");
+        }
+
+        else {
+            Intent i = new Intent(MainMenu.this, MainActivity.class);
+            new_name = name_et_.getText().toString();
+            i.putExtra("difficulty", difficulty);
+            i.putExtra("new_name", new_name);
+            startActivity(i);
+
+            stopPlaying();
+
+            tts = new TextToSpeech(this, this);
+            tts.setLanguage(Locale.US);
+            tts.setSpeechRate(1f);
+            text_to_say =  "Welcome to Space Race!";
+            speakOut();
+        }
+    }
+
+    public void easy()
+    {
+        setDifficulty("1");
+    }
+
+    public void medium()
+    {
+        setDifficulty("2");
+    }
+
+    public void hard()
+    {
+        setDifficulty("3");
+    }
+
+    public void setDifficulty(String x)
+    {
+        difficulty = x;
+    }
+
+    public void toast(String text){
+        Context context = getApplicationContext();
+        Toast toast = Toast.makeText(context, text, Toast.LENGTH_LONG);
+        toast.show();
+    }
+
+    public void play_sound(int R_file_resource_id){
+        //utility function to play a sound
+        //usage:	play_sound(R.raw.sound_to_play);
+        mp = null;
+        mp = MediaPlayer.create(this, R_file_resource_id);
+        mp.start();
+        mp.setLooping(true);
+
+
+        //need to release the player after complete or will stop playing sound when the 	stack runs out of memory
+        mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            public void onCompletion(MediaPlayer mp) {
+                mp.release();};});
+
+    }
+
+    private void stopPlaying() {
+        if (mp != null) {
+            mp.stop();
+            mp.release();
+            mp = null;
+        }
+    }
+
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS)
+        {
+            speakOut();
+        }
+    }
+
+    private void speakOut() {
+        tts.speak(text_to_say, TextToSpeech.QUEUE_FLUSH, null);
+    }
+
+    @Override
+    public void onDestroy() {
+        if (tts != null) {
+            tts.stop(); tts.shutdown();
+        }
+        super.onDestroy();
+    }
+}
+
+
