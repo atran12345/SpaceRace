@@ -1,0 +1,325 @@
+package com.example.spacerace;
+
+import android.content.Context;
+import android.content.Intent;
+
+import android.media.MediaPlayer;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import java.util.Random;
+
+
+public class MainActivity extends AppCompatActivity {
+
+
+
+    MediaPlayer mp;
+    MediaPlayer mp2;
+
+    Random rand = new Random();
+
+    Button left_turn_btn_;
+    Button right_turn_btn_;
+    Button accelerate_btn_;
+    Button avoid_asteroids_btn_;
+    Button brake_btn_;
+    Button hyper_drive_btn_;
+    ImageButton cop_btn_;
+    ImageButton cop2_btn_;
+
+
+    ImageView directions_iv_;
+    TextView cop_warning_tv_;
+
+    String user_choice;
+
+    String[] image_directionList = {"left_img", "right_img", "brake_img",
+            "avoid_asteroid_img", "hyper_drive_img", "accelerate_img"};
+    int size = 0;
+    int current_pos = 0;
+    int future_pos = 0;
+
+    long start_time, end_time, finish_time = 0;
+    int minutes = 0, seconds = 0;
+    String format_second;
+    int boost = 0, penalty = 0;
+
+    String time;
+    String difficulty;
+    String image_str;
+    String cop_still_here="yes";
+    String cop2_still_here="yes";
+
+    String new_name;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        left_turn_btn_ = (Button) findViewById(R.id.left_turn_btn);
+        right_turn_btn_ = (Button) findViewById(R.id.right_turn_btn);
+        accelerate_btn_ = (Button) findViewById(R.id.accelerate_btn);
+        avoid_asteroids_btn_ = (Button) findViewById(R.id.avoid_asteroids_btn);
+        brake_btn_ = (Button) findViewById(R.id.brake_btn);
+        hyper_drive_btn_ = (Button) findViewById(R.id.hyper_drive_btn);
+        cop_btn_=(ImageButton)findViewById(R.id.cop_btn);
+        cop2_btn_=(ImageButton)findViewById(R.id.cop2_btn);
+
+        directions_iv_=(ImageView)findViewById(R.id.directions_iv);
+        cop_warning_tv_=(TextView)findViewById(R.id.cop_warning_tv);
+
+        left_turn_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {    left_turn();  }});
+        right_turn_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {   right_turn();   }});
+        accelerate_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {   accelerate();   }});
+        avoid_asteroids_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {  avoid_asteroids();    }});
+        brake_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {     brake(); }});
+        hyper_drive_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {    hyper_drive();  }});
+        directions_iv_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {                    }});
+        cop_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {    cop();          }});
+        cop2_btn_.setOnClickListener(new View.OnClickListener() {@Override public void onClick(View v) {    cop2();          }});
+
+        //get difficulty and set track length
+        Intent intent = getIntent();
+        difficulty = intent.getStringExtra("difficulty");
+        get_difficulty(difficulty);
+
+        new_name = intent.getStringExtra("new_name");
+
+        //get start time
+        start_time = System.currentTimeMillis();
+
+        //put initial image
+        put_img();
+
+        //play music
+        play_sound(R.raw.whistle);
+
+        cop_btn_.setVisibility(View.INVISIBLE);
+        cop2_btn_.setVisibility(View.INVISIBLE);
+        cop_warning_tv_.setVisibility(View.INVISIBLE);
+    }
+
+
+    public void left_turn() {
+        user_choice = "left_img";
+
+        if (current_pos < size) {
+            check_user_choice();
+            play_sound2(R.raw.turn_sound);
+        }
+    }
+
+    public void right_turn() {
+        user_choice = "right_img";
+        if (current_pos < size) {
+            check_user_choice();
+            play_sound2(R.raw.turn_sound);
+        }
+    }
+
+    public void accelerate() {
+        user_choice = "accelerate_img";
+        if (current_pos < size) {
+            check_user_choice();
+            play_sound2(R.raw.accelerate_sound);
+        }
+    }
+
+    public void avoid_asteroids() {
+        user_choice = "avoid_asteroid_img";
+        if (current_pos < size) {
+            check_user_choice();
+            play_sound2(R.raw.avoid_asteroid);
+        }
+    }
+
+    public void brake() {
+        user_choice = "brake_img";
+        if (current_pos < size) {
+            check_user_choice();
+            play_sound2(R.raw.brake_sound);
+        }
+    }
+
+    public void hyper_drive() {
+        user_choice = "hyper_drive_img";
+        if (current_pos < size) {
+            check_user_choice();
+            play_sound2(R.raw.hyper_sound);
+        }
+    }
+
+    public void check_user_choice() {
+
+        if (user_choice.equals(image_str)) {
+            image_str = image_directionList[rand.nextInt(6)];
+            directions_iv_.setImageDrawable(getResources().getDrawable(getResourceID(image_str, "drawable",
+                    getApplicationContext())));
+
+            current_pos++;
+
+            if(user_choice.equals("hyper_drive_img")) {
+                boost++;
+            }
+
+            if(current_pos == rand.nextInt(size-1)) {
+                cop_btn_.setVisibility(View.VISIBLE); //cop pops up
+                play_sound2(R.raw.cop_sound);
+                cop_warning_tv_.setVisibility(View.VISIBLE);
+                future_pos = current_pos+2;
+            }
+
+            if(future_pos==current_pos && cop_still_here.equals("yes")) {
+                penalty++;
+            }
+
+            if(current_pos == rand.nextInt(size-1)) {
+                cop2_btn_.setVisibility(View.VISIBLE); //cop pops up
+                play_sound2(R.raw.cop_sound);
+                cop_warning_tv_.setVisibility(View.VISIBLE);
+                future_pos = current_pos+2;
+            }
+
+            if(future_pos==current_pos && cop2_still_here.equals("yes")) {
+                penalty++;
+            }
+
+            if(current_pos == size) {
+                get_finish_time();
+
+                Intent i = new Intent(MainActivity.this, Scoreboard.class);
+                i.putExtra("time" , time);
+                i.putExtra("difficulty" , difficulty);
+                i.putExtra("finish_time", finish_time);
+                i.putExtra("new_name", new_name);
+                startActivity(i);
+                stopPlaying();
+            }
+        }
+
+        else {
+            if (image_str == "avoid_asteroid_img"){
+                penalty+= 2;
+
+            }
+            else {
+                penalty++;
+            }
+        }
+    }
+
+    public void get_difficulty(String difficulty) {
+        if (difficulty.equals("1")) { size = 25;  }
+        if (difficulty.equals("2")) { size = 50;  }
+        if (difficulty.equals("3")) { size = 75; }
+    }
+
+    public void get_finish_time(){
+        end_time = System.currentTimeMillis();
+        finish_time = ((end_time - start_time)/1000) +  (penalty  * 3) - (boost * 3);
+        minutes = (int)finish_time / 60;
+        seconds = (int)finish_time - (minutes * 60);
+        if(seconds < 10 && seconds >= 0)
+        {
+            format_second = "0"+seconds;
+        }
+        else if(seconds < 0)
+        {
+            format_second = "00";
+        }
+        else
+        {
+            format_second = seconds+"";
+        }
+        time = "Your time is " + minutes +":"+format_second ;
+    }
+
+    public void put_img() {
+
+        // I have 3 images named left_img to brake_img, so...
+        image_str = image_directionList[rand.nextInt(6)];
+        directions_iv_.setImageDrawable
+                (
+                        getResources().getDrawable(getResourceID(image_str, "drawable",
+                                getApplicationContext()))
+                );
+    }
+
+    public final static int getResourceID
+            (final String resName, final String resType, final Context ctx)
+    {
+        final int ResourceID =
+                ctx.getResources().getIdentifier(resName, resType,
+                        ctx.getApplicationInfo().packageName);
+        if (ResourceID == 0)
+        {
+            throw new IllegalArgumentException
+                    (
+                            "No resource string found with name " + resName
+                    );
+        }
+        else
+        {
+            return ResourceID;
+        }
+    }
+
+    public void play_sound(int R_file_resource_id){
+        //utility function to play a sound
+        //usage:	play_sound(R.raw.sound_to_play);
+        mp = null;
+        mp = MediaPlayer.create(this, R_file_resource_id);
+        mp.start();
+        mp.setLooping(true);
+
+        //need to release the player after complete or will stop playing sound when the 	stack runs out of memory
+        mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            public void onCompletion(MediaPlayer mp) {
+                mp.release();};});
+
+    }
+
+    public void play_sound2(int R_file_resource_id){
+        //utility function to play a sound
+        //usage:	play_sound(R.raw.sound_to_play);
+        mp2 = null;
+        mp2 = MediaPlayer.create(this, R_file_resource_id);
+        mp2.start();
+
+        //need to release the player after complete or will stop playing sound when the 	stack runs out of memory
+        mp2.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            public void onCompletion(MediaPlayer mp) {
+                mp.release();};});
+
+    }
+
+    private void stopPlaying() {
+        if (mp != null) {
+            mp.stop();
+            mp.release();
+            mp = null;
+        }
+    }
+
+    public void cop(){
+        cop_btn_.setVisibility(View.GONE);
+        cop_warning_tv_.setVisibility(View.GONE);
+        cop_still_here = "no";
+    }
+
+    public void cop2(){
+        cop2_btn_.setVisibility(View.GONE);
+        cop_warning_tv_.setVisibility(View.GONE);
+        cop2_still_here = "no";
+    }
+
+
+}
+
